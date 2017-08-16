@@ -9,10 +9,13 @@
 using namespace std;
 
 class GNB {
+private:
+	vector<vector<double>> means;
+    vector<vector<double>> stds;
+
 public:
 
 	vector<string> possible_labels = {"left","keep","right"};
-
 
 	/**
   	* Constructor

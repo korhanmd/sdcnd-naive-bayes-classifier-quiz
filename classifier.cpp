@@ -38,15 +38,19 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
           - Each label is one of "left", "keep", or "right".
     */
 
-    int num_label = possible_labels.size();
+    int num_label = this->possible_labels.size();
     int num_obs = data.size();
     int num_vars = data[0].size();
     int label_ind;
 
     vector<vector<vector<double>>> totals_by_label(num_label);
+    this->means.resize(num_label);
+    this->stds.resize(num_label);
 
     for(int i=0; i < num_label; i++){
         totals_by_label[i].resize(num_vars);
+        means[i].resize(num_vars);
+        stds[i].resize(num_vars);
     }
 
     for(int i=0; i<num_obs; i++){
@@ -62,27 +66,29 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
         }
     }
 
-    cout << totals_by_label[2][0].size() << endl;
-
-    double means[num_label][num_vars];
-    double stds[num_label][num_vars];
-
     for(int i=0; i < num_label; i++){
         for(int j=0; j < num_vars; j++){
             int size = totals_by_label[i][j].size();
-            double mean = std::accumulate(totals_by_label[i][j].begin(), totals_by_label[i][j].end(), 0.0)/size;
-            means[i][j] = mean;
+            double mean = accumulate(totals_by_label[i][j].begin(), totals_by_label[i][j].end(), 0.0)/size;
+            
+            this->means[i][j] = mean;
 
-            std::vector<double> diff(size);
-            std::transform(totals_by_label[i][j].begin(), totals_by_label[i][j].end(), diff.begin(), [mean](double x) { return x - mean; });
-            double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-            double stdev = std::sqrt(sq_sum / size);
+            vector<double> diff(size);
+            transform(totals_by_label[i][j].begin(), totals_by_label[i][j].end(), diff.begin(), [mean](double x) { return x - mean; });
+            double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+            double stdev = sqrt(sq_sum / size);
 
-            stds[i][j] = stdev;
+            this->stds[i][j] = stdev;
         }
     }
 
-    cout << stds[0][2] << endl;
+    for(int i=0; i < num_label; i++){
+        cout << "[";
+        for(int j=0; j < num_vars; j++){
+            cout << "[" << this->stds[i][j] << "] ";
+        }
+        cout << "]" << endl;
+    }
 }
 
 string GNB::predict(vector<double> sample)
@@ -105,5 +111,4 @@ string GNB::predict(vector<double> sample)
     */
 
     return this->possible_labels[1];
-
 }
