@@ -38,9 +38,9 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
           - Each label is one of "left", "keep", or "right".
     */
 
-    int num_label = this->possible_labels.size();
-    int num_obs = data.size();
-    int num_vars = data[0].size();
+    this->num_label = this->possible_labels.size();
+    this->num_obs = data.size();
+    this->num_vars = data[0].size();
     int label_ind;
 
     vector<vector<vector<double>>> totals_by_label(num_label);
@@ -53,7 +53,7 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
         stds[i].resize(num_vars);
     }
 
-    for(int i=0; i<num_obs; i++){
+    for(int i=0; i < this->num_obs; i++){
         if(labels[i] == possible_labels[0])
             label_ind = 0;
         else if(labels[i] == possible_labels[1])
@@ -61,13 +61,13 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
         else
             label_ind = 2;
         
-        for(int j=0; j < num_vars; j++){
+        for(int j=0; j < this->num_vars; j++){
             totals_by_label[label_ind][j].push_back(data[i][j]);
         }
     }
 
-    for(int i=0; i < num_label; i++){
-        for(int j=0; j < num_vars; j++){
+    for(int i=0; i < this->num_label; i++){
+        for(int j=0; j < this->num_vars; j++){
             int size = totals_by_label[i][j].size();
             double mean = accumulate(totals_by_label[i][j].begin(), totals_by_label[i][j].end(), 0.0)/size;
             
@@ -80,14 +80,6 @@ void GNB::train(vector<vector<double>> data, vector<string> labels)
 
             this->stds[i][j] = stdev;
         }
-    }
-
-    for(int i=0; i < num_label; i++){
-        cout << "[";
-        for(int j=0; j < num_vars; j++){
-            cout << "[" << this->stds[i][j] << "] ";
-        }
-        cout << "]" << endl;
     }
 }
 
@@ -110,5 +102,45 @@ string GNB::predict(vector<double> sample)
         # TODO - complete this
     */
 
-    return this->possible_labels[1];
+    double mu, sig, obs;
+    double num, denum, norm, likelihood;
+    double probs[this->num_label];
+
+    for(int i=0; i < this->num_label; i++){
+        double product = 1;
+        for(int j=0; j < this->num_vars; j++){
+            mu = this->means[i][j];
+            sig = this->stds[i][j];
+            obs = sample[j];
+
+            num = pow(obs - mu, 2);
+            denum = 2*pow(sig, 2);
+            norm = 1/sqrt(2*M_PI*pow(sig, 2));
+            likelihood = norm*exp(-num/denum);
+            product *= likelihood;
+        }
+        probs[i] = product;
+    }
+
+    double t=0;
+
+    for(int i=0; i < this->num_label; i++){
+        t += probs[i];
+    }
+
+    for(int i=0; i < this->num_label; i++){
+        probs[i] = probs[i]/t;
+    }
+
+    double best_p = 0;
+    int idx = 0;
+
+    for(int i=0; i < this->num_label; i++){
+        if(probs[i] > best_p){
+            best_p = probs[i];
+            idx = i;
+        }
+    }
+
+    return this->possible_labels[idx];
 }

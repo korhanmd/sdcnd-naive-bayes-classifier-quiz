@@ -12,6 +12,9 @@ class GNB {
 private:
 	vector<vector<double>> means;
     vector<vector<double>> stds;
+    int num_label;
+    int num_obs;
+    int num_vars;
 
 public:
 
